@@ -1,65 +1,78 @@
 <?php
-    require_once("c://xampp/htdocs/proyecto/view/head/head.php");
-    require_once("c://xampp/htdocs/proyecto/controller/productoController.php");
-    $obj = new productoController();
-    $rows = $obj->read();
-?>
-<div class="mb-3">
-    <a href="/proyecto/view/username/create.php" class="btn btn-primary">Agregar un nuevo producto</a>
-</div>
-<table class="table">
-    <thead>
-        <tr>
-            <th scope="col">Id</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Cantidad</th>
-            <th scope="col">Precio Unitario</th>
-            <th scope="col">Precio Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php if($rows): ?>
-            <?php foreach($rows as $row): ?>
-                <tr>
-                    <th><?= $row[0] ?></th>
-                    <th><?= $row[1] ?></th>
-                    <th><?= $row[2] ?></th>
-                    <th><?= $row[3] ?></th>
-                    <th><?= $row[4] ?></th>
-                    <th>
-                        <a href="edit.php?id=<?= $row[0]?>" class="btn btn-success">Modificar</a>
-                        <!-- Button trigger modal -->
-                        <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#id<?=$row[0]?>">Eliminar</a>
 
-                        <!-- Modal -->
-                        <div class="modal fade" id="id<?=$row[0]?>" tabread="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel">¿Desea eliminar el registro?</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    Una vez eliminado no se podra recuperar el registro
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cerrar</button>
-                                    <a href="delete.php?id=<?= $row[0]?>" class="btn btn-danger">Eliminar</a>
-                                    <!-- <button type="button" >Eliminar</button> -->
-                                </div>
-                                </div>
-                            </div>
-                        </div>
-                    </th>
-                </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="3" class="text-center">No hay registros actualmente</td>
-            </tr>
-        <?php endif; ?>
-    </tbody>
-</table>
+?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+  </head>
+  <body>
+    
+    
 <?php
-    require_once("c://xampp/htdocs/proyecto/view/head/footer.php");
+
+require_once 'core/Database.php';
+require_once 'app/models/ProductModel.php';
+
+$db = new Database('localhost', 'root', '', 'shopping');
+$pdo = $db->connect();
+
+$model = new ProductModel($pdo);
+
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+
+switch ($action) {
+  case 'create':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $name = $_POST['name'];
+      $price = $_POST['price'];
+      $amount = $_POST['amount'];
+      $fullPrice = $price * $amount;
+      $model->createProduct($name,$amount, $price,$fullPrice);
+      header('Location: index.php');
+    } else {
+      require 'app/views/create.php';
+    }
+    break;
+  case 'read':
+    $result = $model->getProducts();
+    require 'app/views/read.php';
+    break;
+  case 'update':
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $id = $_POST['id'];
+      $name = $_POST['name'];
+      $price = $_POST['price'];
+      $amount = $_POST['amount'];
+      $fullPrice = $price * $amount;
+      $model->updateProduct($id, $name,$amount, $price,$fullPrice);
+      header('Location: index.php');
+    } else {
+      $id = $_GET['id'];
+      $product = $model->getProductById($id);
+      require 'app/views/update.php';
+    }
+    break;
+  case 'delete':
+    $id = $_GET['id'];
+    $model->deleteProduct($id);
+    header('Location: index.php');
+    break;
+  case 'deleteAll':
+    $model->deleteList();
+    header("Location:index.php");
+    break;
+  default:
+    header('Location: index.php?action=read');
+    break;
+}
+?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+  </body>
+</html>
+<?php
+
 ?>
